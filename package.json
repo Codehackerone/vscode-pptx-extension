@@ -1,0 +1,61 @@
+{
+  "name": "pptx-viewer",
+  "displayName": "PPTX Viewer",
+  "description": "Preview PowerPoint (.pptx) files in VS Code with slide thumbnails and speaker notes.",
+  "version": "0.1.1",
+  "publisher": "soumyajit",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Codehackerone/vscode-pptx-extension.git"
+  },
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "slides",
+    "presentation",
+    "viewer"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "pptxViewer.preview",
+        "displayName": "PPTX Viewer",
+        "selector": [
+          { "filenamePattern": "*.pptx" },
+          { "filenamePattern": "*.pptm" },
+          { "filenamePattern": "*.ppsx" },
+          { "filenamePattern": "*.potx" }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "vendor": "node scripts/copy-vendor.js",
+    "compile": "npm run vendor && tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "fixture": "node test/make-fixture.js",
+    "test": "npm run fixture && node test/parse.test.js",
+    "package": "vsce package --out pptx-viewer.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "@xmldom/xmldom": "^0.8.10",
+    "jszip": "^3.10.1",
+    "pptxgenjs": "^3.12.0",
+    "typescript": "^5.4.0"
+  }
+}
