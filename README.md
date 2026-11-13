@@ -1,12 +1,13 @@
 # PPTX Viewer
 
-Preview PowerPoint files (`.pptx`, `.pptm`, `.ppsx`, `.potx`) right inside VS Code.
+Preview PowerPoint files (`.pptx`, `.pptm`, `.ppsx`, `.potx`) right inside VS Code, and edit their speaker notes.
 
 - **Slide thumbnails** sidebar: click to jump to a slide. Hidden slides are dimmed.
 - **Speaker notes** panel under the current slide. Toggle it with the **Notes** button or `N`.
-- **Keyboard navigation**: `←` `→` `↑` `↓`, `PageUp`/`PageDown`, `Space`, `Home`, `End`.
-- **Live reload**: when the file changes on disk (for example, after you save it in PowerPoint), the preview refreshes.
-- Read-only. The file is never modified.
+- **Edit speaker notes**: type in the notes panel. The tab shows unsaved changes, `Cmd/Ctrl+S` saves, and Undo, Redo, Revert File and hot exit all work. Slides with no notes get a notes page when you add some. If the deck has no notes master, one is created too.
+- **Keyboard navigation**: `←` `→` `↑` `↓`, `PageUp`/`PageDown`, `Space`, `Home`, `End`. While you're typing notes, those keys stay in the notes box. Press `Esc` to leave it.
+- **Live reload**: when the file changes on disk (for example, after you save it in PowerPoint), the preview refreshes. It doesn't refresh while you have unsaved notes edits.
+- Saving changes only the notes parts of the file. Slide content is never rewritten.
 
 ## What renders
 
@@ -38,7 +39,7 @@ Then open any `.pptx` file. If another editor opens it, right-click the file and
 Open this folder in VS Code and press `F5`, choosing **VS Code Extension Development**. A new window opens with the extension loaded.
 
 ```sh
-npm test                          # generates a fixture deck and checks the parser output
+npm test                          # generates a fixture deck, checks the parser and the notes writer
 node test/parse.test.js deck.pptx # prints a per-slide summary for any deck
 ```
 
@@ -46,7 +47,8 @@ node test/parse.test.js deck.pptx # prints a per-slide summary for any deck
 
 | Path | Role |
 | --- | --- |
-| `src/extension.ts` | Registers the custom editor, sends file bytes to the webview, and watches for changes |
+| `src/extension.ts` | Custom editor and document model: undo/redo, save, revert, backups, file watching |
+| `src/notes.ts` | Writes notes edits into the .pptx, adding notes slides and a notes master when needed |
 | `media/pptx-parser.js` | Turns OOXML into a render model (positions in px, resolved styles). Runs in the webview and in Node tests |
 | `media/viewer.js` | Draws the render model as HTML/SVG and handles the thumbnails, notes and navigation |
 | `media/viewer.css` | Viewer styles, which follow your VS Code theme |

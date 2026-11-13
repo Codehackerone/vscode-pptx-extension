@@ -1,8 +1,8 @@
 {
   "name": "pptx-viewer",
   "displayName": "PPTX Viewer",
-  "description": "Preview PowerPoint (.pptx) files in VS Code with slide thumbnails and speaker notes.",
-  "version": "0.1.1",
+  "description": "Preview PowerPoint (.pptx) files in VS Code with slide thumbnails, and edit speaker notes.",
+  "version": "0.2.0",
   "publisher": "soumyajit",
   "license": "MIT",
   "repository": {
@@ -24,17 +24,25 @@
     "presentation",
     "viewer"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "customEditors": [
       {
         "viewType": "pptxViewer.preview",
         "displayName": "PPTX Viewer",
         "selector": [
-          { "filenamePattern": "*.pptx" },
-          { "filenamePattern": "*.pptm" },
-          { "filenamePattern": "*.ppsx" },
-          { "filenamePattern": "*.potx" }
+          {
+            "filenamePattern": "*.pptx"
+          },
+          {
+            "filenamePattern": "*.pptm"
+          },
+          {
+            "filenamePattern": "*.ppsx"
+          },
+          {
+            "filenamePattern": "*.potx"
+          }
         ],
         "priority": "default"
       }
@@ -42,20 +50,24 @@
   },
   "scripts": {
     "vendor": "node scripts/copy-vendor.js",
-    "compile": "npm run vendor && tsc -p ./",
+    "compile": "npm run vendor && tsc -p ./ && npm run bundle",
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile",
     "fixture": "node test/make-fixture.js",
-    "test": "npm run fixture && node test/parse.test.js",
-    "package": "vsce package --out pptx-viewer.vsix"
+    "test": "npm run fixture && npm run compile && node test/parse.test.js && node test/notes.test.js",
+    "package": "vsce package --no-dependencies --out pptx-viewer.vsix",
+    "bundle": "esbuild src/extension.ts --bundle --platform=node --target=node18 --format=cjs --external:vscode --minify --outfile=dist/extension.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.0.0",
-    "@xmldom/xmldom": "^0.8.10",
-    "jszip": "^3.10.1",
+    "esbuild": "^0.28.2",
     "pptxgenjs": "^3.12.0",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.8.10",
+    "jszip": "^3.10.1"
   }
 }

@@ -130,9 +130,8 @@ html, body {
 
 #notes {
   flex: 0 0 auto;
-  max-height: 30%;
-  min-height: 60px;
-  overflow-y: auto;
+  height: 28%;
+  min-height: 90px;
   padding: 8px 16px 12px;
   border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
   background: var(--vscode-panel-background, var(--vscode-editor-background));
@@ -148,8 +147,28 @@ html, body {
   margin-bottom: 4px;
 }
 
-.notes-body { white-space: pre-wrap; line-height: 1.5; user-select: text; }
-.notes-body.empty { color: var(--vscode-descriptionForeground); font-style: italic; }
+#notes {
+  display: flex;
+  flex-direction: column;
+}
+
+#notes-input {
+  flex: 1 1 auto;
+  min-height: 60px;
+  resize: none;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font: inherit;
+  line-height: 1.5;
+}
+
+#notes-input:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+#notes-input::placeholder { color: var(--vscode-input-placeholderForeground); }
 
 /* ---- slide content ------------------------------------------------------------ */
 

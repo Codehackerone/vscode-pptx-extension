@@ -7,6 +7,7 @@
   const sidebar = $('sidebar');
   const stage = $('stage');
   const notesEl = $('notes');
+  const notesInput = $('notes-input');
   const counter = $('counter');
 
   const saved = vscode.getState() || {};
@@ -23,11 +24,12 @@
 
   window.addEventListener('message', async (event) => {
     const msg = event.data;
-    if (msg.type === 'load') await load(msg.data);
+    if (msg.type === 'load') await load(msg.data, msg.notes);
+    else if (msg.type === 'notes') applyNotes(msg.notes);
     else if (msg.type === 'error') showStatus(`Could not read file: ${msg.message}`, true);
   });
 
-  async function load(data) {
+  async function load(data, notes) {
     try {
       if (!state.model) showStatus('Loading…');
       const zip = await JSZip.loadAsync(data, { base64: typeof data === 'string' });
@@ -43,6 +45,8 @@
       state.blobUrls.forEach((u) => URL.revokeObjectURL(u));
       state.blobUrls = urls;
       state.model = model;
+      cancelPendingNotes();
+      applyNotes(notes, true);
       if (!model.slides.length) {
         showStatus('This presentation has no slides.');
         sidebar.replaceChildren();
@@ -72,6 +76,7 @@
   function show(i) {
     const { model } = state;
     if (!model) return;
+    flushNotes();
     state.index = Math.max(0, Math.min(i, model.slides.length - 1));
     vscode.setState({ index: state.index, showNotes: state.showNotes });
 
@@ -109,18 +114,58 @@
   function renderNotes(slide) {
     notesEl.classList.toggle('hidden', !state.showNotes);
     $('toggle-notes').classList.toggle('on', state.showNotes);
-    const header = document.createElement('div');
-    header.className = 'notes-title';
-    header.textContent = 'Speaker notes';
-    const body = document.createElement('div');
-    body.className = 'notes-body';
-    if (slide.notes) body.textContent = slide.notes;
-    else {
-      body.textContent = 'No notes for this slide.';
-      body.classList.add('empty');
-    }
-    notesEl.replaceChildren(header, body);
+    if (notesInput.value !== slide.notes) notesInput.value = slide.notes;
     requestAnimationFrame(fitMain);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Notes editing. Edits are batched while typing and sent to the extension, which
+  // owns the undo stack and saving. slide.notes always holds the last sent text.
+  // ---------------------------------------------------------------------------
+
+  let notesTimer = null;
+  let pendingIndex = -1;
+
+  notesInput.addEventListener('input', () => {
+    pendingIndex = state.index;
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(flushNotes, 500);
+  });
+  notesInput.addEventListener('blur', flushNotes);
+
+  function flushNotes() {
+    clearTimeout(notesTimer);
+    notesTimer = null;
+    const { model } = state;
+    if (pendingIndex < 0 || !model) return;
+    const slide = model.slides[pendingIndex];
+    pendingIndex = -1;
+    if (!slide) return;
+    const after = notesInput.value;
+    if (after === slide.notes) return;
+    vscode.postMessage({ type: 'editNotes', index: slide.number - 1, before: slide.notes, after });
+    slide.notes = after;
+  }
+
+  function cancelPendingNotes() {
+    clearTimeout(notesTimer);
+    notesTimer = null;
+    pendingIndex = -1;
+  }
+
+  /** Applies notes text pushed by the extension (unsaved edits, undo/redo). */
+  function applyNotes(notes, silent) {
+    const { model } = state;
+    if (!model || !notes) return;
+    for (const [key, text] of Object.entries(notes)) {
+      const slide = model.slides[Number(key)];
+      if (!slide) continue;
+      slide.notes = text;
+      if (!silent && Number(key) === state.index) {
+        cancelPendingNotes();
+        if (notesInput.value !== text) notesInput.value = text;
+      }
+    }
   }
 
   function buildSidebar() {
@@ -170,6 +215,11 @@
 
   window.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const tag = e.target && e.target.tagName;
+    if (tag === 'TEXTAREA' || tag === 'INPUT') {
+      if (e.key === 'Escape') e.target.blur();
+      return;
+    }
     switch (e.key) {
       case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
         show(state.index + 1); break;
